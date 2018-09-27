@@ -51,4 +51,8 @@ CLIENT_LANGUAGE=rust; \
 CLEANUP_DIRS=(docs src); \
 kubeclient::generator::generate_client "${OUTPUT_DIR}"
 
+find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/::models::Value/::serde_json::Value/g' {} +
+find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/ Value/ ::serde_json::Value/g' {} +
+find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/<Value/<::serde_json::Value/g' {} +
+
 echo "---Done."
