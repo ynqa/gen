@@ -46,7 +46,7 @@ popd > /dev/null
 source "${SCRIPT_ROOT}/client-generator.sh"
 source "${SETTING_FILE}"
 
-SWAGGER_CODEGEN_COMMIT="${SWAGGER_CODEGEN_COMMIT:-v2.3.0}"; \
+SWAGGER_CODEGEN_COMMIT="${SWAGGER_CODEGEN_COMMIT:-v2.3.1}"; \
 CLIENT_LANGUAGE=rust; \
 CLEANUP_DIRS=(docs src); \
 kubeclient::generator::generate_client "${OUTPUT_DIR}"
@@ -54,5 +54,8 @@ kubeclient::generator::generate_client "${OUTPUT_DIR}"
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/::models::Value/::serde_json::Value/g' {} +
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/ Value/ ::serde_json::Value/g' {} +
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/<Value/<::serde_json::Value/g' {} +
+sed -i 's/not: Option<::models::V1beta1JsonSchemaProps>/not: Option<Box<::models::V1beta1JsonSchemaProps>>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
+sed -i 's/not: ::models::V1beta1JsonSchemaProps/not: Box<::models::V1beta1JsonSchemaProps>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
+sed -i 's/pub fn not(\&self) -> Option<\&::models::V1beta1JsonSchemaProps>/pub fn not(\&self) -> Option<\&Box<::models::V1beta1JsonSchemaProps>>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
 
 echo "---Done."
