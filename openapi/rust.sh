@@ -51,12 +51,22 @@ CLIENT_LANGUAGE=rust; \
 CLEANUP_DIRS=(docs src); \
 kubeclient::generator::generate_client "${OUTPUT_DIR}"
 
+# use serde_json
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/::models::Value/::serde_json::Value/g' {} +
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/ Value/ ::serde_json::Value/g' {} +
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/<Value/<::serde_json::Value/g' {} +
+
+# fix query param
 find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/let query = ::url::form_urlencoded::Serializer::new(String::new())/let query = ::url::form_urlencoded::Serializer::new("?".to_string())/g' {} +
+
+# avoid recursive type has infinite size
 sed -i 's/not: Option<::models::V1beta1JsonSchemaProps>/not: Option<Box<::models::V1beta1JsonSchemaProps>>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
 sed -i 's/not: ::models::V1beta1JsonSchemaProps/not: Box<::models::V1beta1JsonSchemaProps>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
 sed -i 's/pub fn not(\&self) -> Option<\&::models::V1beta1JsonSchemaProps>/pub fn not(\&self) -> Option<\&Box<::models::V1beta1JsonSchemaProps>>/g' "${OUTPUT_DIR}/src/models/v1beta1_json_schema_props.rs"
+
+# add default header
+sed -i 's/pub client: hyper::client::Client<C>,/pub client: hyper::client::Client<C>,\n  pub bearer: Option<hyper::header::Bearer>,\n  pub basic: Option<hyper::header::Basic>,/g' "${OUTPUT_DIR}/src/apis/configuration.rs"
+sed -i 's/client: client,/client: client,\n      bearer: None,\n      basic: None,/g' "${OUTPUT_DIR}/src/apis/configuration.rs"
+find "${OUTPUT_DIR}/src/" -type f -name \*.rs -exec sed -i 's/let mut req = hyper::Request::new(method, uri.unwrap());/        let mut req = hyper::Request::new(method, uri.unwrap());\n        match (\&configuration.bearer, \&configuration.basic) {\n            (Some(b), _) => req.headers_mut().set(hyper::header::Authorization(b.clone())),\n            (_, Some(b)) => req.headers_mut().set(hyper::header::Authorization(b.clone())),\n            _ => {}\n        }/g' {} +
 
 echo "---Done."
